@@ -40,9 +40,6 @@ project_cheese/
 research/
 tests/
 
-markdown
-Copy code
-
 ### **audit**
 - SFTP-only account.  
 - Read-only access to:
@@ -65,15 +62,11 @@ Nginx serves a static text file located at:
 
 /srv/www/student/index.txt
 
-sql
-Copy code
 
 The file contains the student ID:
 
 601249
 
-yaml
-Copy code
 
 ### **Expected behaviour**
 
@@ -91,8 +84,6 @@ A Docker application based on the repository:
 
 https://github.com/sbrl/SDI-Docker
 
-markdown
-Copy code
 
 is installed and run as a container.
 
@@ -110,8 +101,6 @@ Nginx forwards traffic to the Docker container when the following hostname is us
 
 docker.stu-601249-vm1.net.dcs.hull.ac.uk
 
-yaml
-Copy code
 
 ### **Expected behaviour**
 
@@ -132,24 +121,18 @@ sudo systemctl status nginx
 sudo systemctl reload nginx
 sudo nginx -t
 
-markdown
-Copy code
 
 ### **Docker**
 sudo docker ps
 sudo docker logs sdi_web
 sudo docker restart sdi_web
 
-markdown
-Copy code
 
 ### **User and permission checks**
 ls -l
 getfacl <path>
 sudo tail -n 20 /var/log/auth.log
 
-yaml
-Copy code
 
 ---
 

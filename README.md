@@ -14,7 +14,7 @@ Three operational accounts were created to support different roles:
 
 Each account was assigned permissions based on the principle of least privilege: 
 
-- **marketing** requires the ability to upload website content, but should not access other users’ files.  
+- **marketing** requires the ability to upload website content but should not access other users’ files.  
   - Added to the `webedit` group for write access to `/srv/www`.
   - Restricted to SFTP only by placing the account in the `sftponly` group.
 
@@ -91,5 +91,3 @@ This approach isolates the web service from the application runtime and ensures 
 * getfacl -R /home/design
 * getfacl -R /srv/www
 * tail -n 20 /var/log/auth.log
-
-These commands support routine health checks, debugging, and permission verification.

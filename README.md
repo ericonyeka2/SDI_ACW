@@ -90,3 +90,6 @@ This approach isolates the web service from the application runtime and ensures 
 * ls -l /home
 * getfacl -R /home/design
 * getfacl -R /srv/www
+
+These commands support routine health checks, debugging, and permission verification.
+

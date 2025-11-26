@@ -1,145 +1,95 @@
-# Secure Digital Infrastructure – README  
-**Student ID:** 601249
-**Hostname:** stu-601249-vm1.net.dcs.hull.ac.uk  
+# 601249 – Server Configuration Summary
+
+This document explains the configuration of the virtual machine, the purpose behind each major configuration. The setup aims to provide a secure multi-user environment, controlled file transfer, a correctly permissioned static website, and a reverse-proxied Docker application.
 
 ---
 
-## 1. Configuration Summary
+## 1. User Accounts and Access Separation
 
-The virtual machine is configured to provide a secure multi-user environment with controlled SFTP access, a static web service, and a reverse-proxied Docker application.  
-Nginx is used both as a web server and as a reverse proxy, while OpenSSH manages restricted SFTP access for the designated user accounts.
+Three operational accounts were created to support different roles:
 
----
+- **marketing**
+- **design**
+- **audit**
 
-## 2. User Accounts and Access Control
+Each account was assigned permissions based on the principle of least privilege: 
 
-The VM contains the following user accounts:
+- **marketing** requires the ability to upload website content, but should not access other users’ files.  
+  - Added to the `webedit` group for write access to `/srv/www`.
+  - Restricted to SFTP only by placing the account in the `sftponly` group.
 
-- `ubuntu` – administrative account  
-- `maintenance` – retained service account  
-- `marketing`  
-- `design`  
-- `audit`  
-- `sysadmin` – removed as required  
+- **design** manages project files unrelated to the website.  
+  - Given full access to its own home directory, which contains nested project folders.
+  - Denied access to the web server directory to prevent accidental modification.
 
-### **marketing**
-- Restricted to SFTP access.  
-- Read/write access to `/srv/www/`.  
-- No access to the home directories of other users.
+- **audit** needs read-only visibility across project and website files.  
+  - Restricted to SFTP only.
+  - Granted **read but not write** access to marketing and design directories using ACLs (`getfacl` / `setfacl`).
 
-### **design**
-- SSH and SFTP access enabled.  
-- Full access to its own home directory.  
-- No write access to `/srv/www/`.  
-- Contains the required project structure:
-
-project_rocket/
-cad/
-render/
-project_cheese/
-research/
-tests/
-
-### **audit**
-- SFTP-only account.  
-- Read-only access to:
-  - `/srv/www/`
-  - `/home/marketing/`
-  - `/home/design/`  
-- Write access disabled across the system.
-
-### **Authentication**
-Each of the three operational accounts (`marketing`, `design`, `audit`) is configured with a unique SSH public key stored in `~/.ssh/authorized_keys`.  
-Password authentication is disabled for these accounts.
-
-Chroot and permission rules in `sshd_config` restrict all three users to internal-SFTP and the appropriate directories.
+This structure ensures clear separation of duties and protects data integrity between teams.
 
 ---
 
-## 3. Static Web Service
+## 2. File Transfer Configuration
 
-Nginx serves a static text file located at:
+SFTP was configured to give users secure, encrypted access with controlled capabilities:
 
-/srv/www/student/index.txt
+- The `Match Group sftponly` rule in `sshd_config` forces SFTP-only access and blocks shell usage for marketing and audit.
+- SSH keys were deployed into each account’s `~/.ssh/authorized_keys` to provide key-based authentication and prevent password-based access.
+- The design directory structure was created to match operational requirements:
 
+/home/design/project_rocket/{cad,render}
+/home/design/project_cheese/{research,tests}
 
-The file contains the student ID:
-
-601249
-
-
-### **Expected behaviour**
-
-- Accessing:  
-  `http://stu-601249-vm1.net.dcs.hull.ac.uk/student/`  
-  returns a `text/plain` response containing `601249`.
-
-- Requests to the root path (`/`) return the default Nginx response (403), which meets the required behaviour for this configuration.
+These directories provide isolated spaces for each project while ensuring other accounts cannot modify them.
 
 ---
 
-## 4. Docker Application and Reverse Proxy
+## 3. Web Server (Nginx) Configuration
 
-A Docker application based on the repository:
+A static web server was deployed using Nginx with the root located at:
 
-https://github.com/sbrl/SDI-Docker
+/srv/www/student
 
+This directory contains a text file that returns the 6-digit student number.  
+Permissions were assigned so that:
 
-is installed and run as a container.
+- The **webedit** group can update content.
+- Marketing and audit can access the site according to their assigned privileges.
 
-### **Docker configuration**
+Serving static files through Nginx ensures predictable behaviour for automated tests and prevents accidental write access from other system users.
 
-- Image built as:  
-  `sdi-web:latest`
-- Dedicated Docker network created.  
-- Container executed with a fixed IP (`172.18.0.10`).  
-- Application inside the container listens on port `3000`.
+---
 
-### **Reverse proxy configuration**
+## 4. Docker Application Reverse Proxy
 
-Nginx forwards traffic to the Docker container when the following hostname is used:
+A Docker container running a Node.js application was built and configured to start automatically.
 
-docker.stu-601249-vm1.net.dcs.hull.ac.uk
+To expose the application securely, Nginx was used as a reverse proxy:
 
+- Requests to the main hostname serve the static site.  
+- Requests using the `docker.` subdomain are forwarded to the container at `http://172.18.0.10:3000`.
 
-### **Expected behaviour**
-
-- Visiting the Docker hostname returns:  
-  “Hello, world! This is a request that was handled by a Docker container…”  
-  followed by the validation code generated by the application.
-
-- Visiting the non-Docker hostname continues to serve the static site content.
-
-Both hostnames function correctly both internally and externally.
+This approach isolates the web service from the application runtime and ensures both services run on port 80 while remaining logically separated.
 
 ---
 
 ## 5. Maintenance Commands
 
-### **Nginx**
+ **Nginx**
+* sudo systemctl status nginx
+* sudo systemctl reload nginx
+* sudo nginx -t
 
-sudo systemctl status nginx
-sudo systemctl reload nginx 
-sudo nginx -t 
+**Docker**
+* sudo docker ps
+* sudo docker logs sdi_web
+* sudo docker restart sdi_web
 
+**User and Permission Checks**
+* ls -l /home
+* getfacl -R /home/design
+* getfacl -R /srv/www
+* tail -n 20 /var/log/auth.log
 
-### **Docker**
-sudo docker ps 
-sudo docker logs sdi_web 
-sudo docker restart sdi_web 
-
-
-### **User and permission checks**
-ls -l
-getfacl <path>
-sudo tail -n 20 /var/log/auth.log
-
-
----
-
-## 6. Additional Notes
-
-- No passwords or sensitive material are included in this document.  
-- All services are running with the principle of least privilege.  
-- Hostname-based routing is used to separate the static site from the Docker application.  
-- All behaviour has been confirmed through internal and external testing.
+These commands support routine health checks, debugging, and permission verification.

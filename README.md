@@ -1,10 +1,10 @@
 # Secure Digital Infrastructure – README  
-**Student ID:** 601249  
+**Student ID:** 601249
 **Hostname:** stu-601249-vm1.net.dcs.hull.ac.uk  
 
 ---
 
-## 1. System Overview
+## 1. Configuration Summary
 
 The virtual machine is configured to provide a secure multi-user environment with controlled SFTP access, a static web service, and a reverse-proxied Docker application.  
 Nginx is used both as a web server and as a reverse proxy, while OpenSSH manages restricted SFTP access for the designated user accounts.
@@ -117,15 +117,16 @@ Both hostnames function correctly both internally and externally.
 ## 5. Maintenance Commands
 
 ### **Nginx**
+
 sudo systemctl status nginx
-sudo systemctl reload nginx
-sudo nginx -t
+sudo systemctl reload nginx 
+sudo nginx -t 
 
 
 ### **Docker**
-sudo docker ps
-sudo docker logs sdi_web
-sudo docker restart sdi_web
+sudo docker ps 
+sudo docker logs sdi_web 
+sudo docker restart sdi_web 
 
 
 ### **User and permission checks**
